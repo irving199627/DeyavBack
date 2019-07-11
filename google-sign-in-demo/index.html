@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Google Sign In Demo</title>
+    <meta name="google-signin-client_id" content="460571682372-sjedr5d2gh4lkvj8klgj3n19o36adanb.apps.googleusercontent.com">
+
+</head>
+
+<body>
+
+
+    <div class="g-signin2" data-onsuccess="onSignIn"></div>
+    <a href="#" onclick="signOut();">Sign out</a>
+
+
+
+    <div id="twitter-wjs">asd</div>
+    <script>
+        window.twttr = (function(d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0],
+                t = window.twttr || {};
+            if (d.getElementById(id)) return t;
+            js = d.createElement(s);
+            js.id = id;
+            js.src = "https://platform.twitter.com/widgets.js";
+            fjs.parentNode.insertBefore(js, fjs);
+
+            t._e = [];
+            t.ready = function(f) {
+                t._e.push(f);
+            };
+
+            return t;
+        }(document, "script", "twitter-wjs"));
+    </script>
+    <!-- <div id="fb-root"></div>
+    <script src="https://connect.facebook.net/en_US/sdk.js"></script>
+    <script>
+        FB.init({
+            appId: 1577407275726709,
+            status: true,
+            xfbml: true,
+            version: 'v3.3'
+        });
+        FB.AppEvents.logPageView();
+    </script> -->
+    <!-- <div id="fb-root"></div>
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/es_LA/sdk.js#xfbml=1&version=v3.3&appId=1577407275726709&autoLogAppEvents=1">
+    </script> -->
+    <!-- <div onlogin="FB.getLoginStatus()" class="fb-login-button" data-width="" data-size="small" data-button-type="login_with"></div> -->
+
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+
+
+    <script>
+        function onSignIn(googleUser) {
+            var profile = googleUser.getBasicProfile();
+            console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
+            console.log('Name: ' + profile.getName());
+            console.log('Image URL: ' + profile.getImageUrl());
+            console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
+
+            var id_token = googleUser.getAuthResponse().id_token;
+            console.log('Token', id_token);
+        }
+    </script>
+    <script>
+        function signOut() {
+            var auth2 = gapi.auth2.getAuthInstance();
+            auth2.signOut().then(function() {
+                console.log('User signed out.');
+            });
+        }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+
+    <!-- <script>
+        FB.getLoginStatus(function(response) {
+            if (response.status === 'connected') {
+                console.log(response.authResponse);
+                console.log(response.authResponse.accessToken);
+            }
+        });
+    </script> -->
+</body>
+
+</html>
