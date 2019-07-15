@@ -10,8 +10,10 @@ var app = express();
 // CORS
 app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    res.header('Access-Control-Allow-Methods', 'POST', 'GET', 'PUT', 'DELETE', 'OPTIONS');
+    res.header("Access-Control-Allow-Headers", req.headers.origin);
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+    res.header('Access-Control-Allow-Headers', 'Access-Control-Allow-Headers,Content-type,' +
+        'Authorization, Content-Length,X-Requested-With,Access-Control-Request-Headers,token');
     next();
 });
 
@@ -25,11 +27,10 @@ app.use(bodyParser.json());
 var appRoutes = require('./routes/app');
 var usuariosRoutes = require('./routes/usuario');
 var loginRoutes = require('./routes/login');
+var articuloRoutes = require('./routes/articulo');
+
 var cursosRoutes = require('./routes/curso');
-var blogRoutes = require('./routes/blog');
-var citasRoutes = require('./routes/cita');
 var inscripcionRoutes = require('./routes/inscripcion');
-var materialesRoutes = require('./routes/material');
 var sliderRoutes = require('./routes/slider');
 // var busquedaRoutes = require('./routes/busqueda');
 // var uploadRoutes = require('./routes/upload');
@@ -55,11 +56,9 @@ app.use('/usuario', usuariosRoutes);
 // app.use('/medico', medicoRoutes);
 app.use('/login', loginRoutes);
 app.use('/curso', cursosRoutes);
-app.use('/blog', blogRoutes);
-app.use('/cita', citasRoutes);
 app.use('/inscripcion', inscripcionRoutes);
-app.use('/material', materialesRoutes);
 app.use('/slider', sliderRoutes);
+app.use('/articulo', articuloRoutes);
 // app.use('/busqueda', busquedaRoutes);
 // app.use('/upload', uploadRoutes);
 // app.use('/img', imagenesRoutes);
