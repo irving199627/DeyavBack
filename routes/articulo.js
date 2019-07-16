@@ -1,11 +1,14 @@
 var express = require('express');
 
 var app = express();
+var fileupload = require('express-fileupload');
+var fs = require('fs');
 
 var Articulo = require('../models/articulo');
+app.use(fileupload());
 
 // rutas
-app.get('/:tipo', (req, res, next) => {
+app.get('/:tipo', (req, res) => {
     var tipo = req.params.tipo;
     var desde = req.params.desde || 0;
     desde = Number(desde);
@@ -39,20 +42,72 @@ app.get('/:tipo/:id', (req, res) => {
 app.post('/:tipo', (req, res, next) => {
     var tipo = req.params.tipo;
     var body = req.body;
-    if (tipo === 'blog') {
-        return crearArticulo(res, body, tipo);
-    }
-    if (tipo === 'noticia') {
-        return crearArticulo(res, body, tipo);
-    } else {
-        return res.status(500).json({
+
+    if (!req.files) {
+        return res.status(400).json({
             ok: false,
-            err: {
-                message: 'Tipo no valido'
-            }
+            mensaje: 'No seleccionó nada',
+            err: { message: 'Debe de seleccionar una imagen' }
         });
     }
+    console.log(req.files);
+    var archivo = req.files.imagen;
+
+    if (archivo.size > 2000000) {
+        return res.status(400).json({
+            ok: false,
+            mensaje: 'El peso de la imagen es mayor a 2MB',
+            err: { message: 'La imagen debe tener un tamaño menor a 2MB' }
+        });
+    }
+
+    var nombreCortado = archivo.name.split('.');
+    var extensionArchivo = nombreCortado[nombreCortado.length - 1];
+
+    var extensionesValidas = ['png', 'jpg', 'jpeg'];
+
+    if (extensionesValidas.indexOf(extensionArchivo) < 0) {
+        return res.status(400).json({
+            ok: false,
+            mensaje: 'Extension no valida',
+            err: { message: 'Las extensiones validas son ' + extensionesValidas.join(', ') }
+        });
+    }
+
+    var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.${ extensionArchivo }`;
+    console.log(nombreArchivo);
+    var path = `./uploads/${ tipo }/${ nombreArchivo }`;
+
+    archivo.mv(path, err => {
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                mensaje: 'Error al mover archivo',
+                err: err
+            });
+        }
+        if (tipo === 'blog') {
+            return crearArticulo(res, body, tipo, nombreArchivo);
+        }
+        if (tipo === 'noticia') {
+            return crearArticulo(res, body, tipo);
+        } else {
+            return res.status(500).json({
+                ok: false,
+                err: {
+                    message: 'Tipo no valido'
+                }
+            });
+        }
+        // res.status(200).json({
+        //     ok: true,
+        //     mensaje: 'archivo movido',
+        //     extensionArchivo: extensionArchivo
+        // });
+    })
+
 });
+
 
 app.put('/:tipo/:id', (req, res) => {
     var id = req.params.id;
@@ -191,6 +246,28 @@ function getArticulos(res, tipo, desde, ) {
         });
 }
 
+function getArticulosUltimo(res, tipo) {
+    Articulo.find({ tipo })
+        .sort({ $natural: -1 })
+        .limit(1)
+        .exec((err, articulosDB) => {
+            if (err) {
+                return res.status(400).json({
+                    ok: false,
+                    err
+                });
+            }
+
+            Articulo.countDocuments({ tipo }, (err, conteo) => {
+                return res.status(200).json({
+                    ok: true,
+                    articulos: articulosDB,
+                    total: conteo
+                });
+            });
+        });
+}
+
 function getArticulosById(res, tipo, id) {
     Articulo.findById(id, (err, articuloBD) => {
         if (err) {
@@ -223,11 +300,11 @@ function getArticulosById(res, tipo, id) {
     });
 }
 
-function crearArticulo(res, body, tipo)  {
+function crearArticulo(res, body, tipo, nombreArchivo)  {
     var articulo = new Articulo({
         titulo: body.titulo,
         contenido: body.contenido,
-        img: body.img,
+        img: nombreArchivo,
         tipo: tipo
     });
     articulo.save((err, articuloGuardado) => {

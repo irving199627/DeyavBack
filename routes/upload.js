@@ -11,6 +11,7 @@ var Hospital = require('../models/hospitales');
 app.use(fileupload());
 
 // rutas
+
 app.put('/:tabla/:id', (req, res, next) => {
     var tabla = req.params.tabla;
     var id = req.params.id;
@@ -38,7 +39,7 @@ app.put('/:tabla/:id', (req, res, next) => {
     var extensionArchivo = nombreCortado[nombreCortado.length - 1];
 
     // solo estas extensiones aceptamos
-    var extensionesValidas = ['png', 'jpg', 'gif', 'jpeg'];
+    var extensionesValidas = ['png', 'jpg', 'jpeg'];
 
     if (extensionesValidas.indexOf(extensionArchivo) < 0) {
         res.status(400).json({
