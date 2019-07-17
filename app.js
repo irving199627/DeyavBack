@@ -2,10 +2,17 @@
 var express = require('express');
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser')
+const path = require('path');
+const http = require('http');
 
 
 // Inicializar variables
 var app = express();
+const publicPath = path.resolve(__dirname, '/public');
+let server = http.createServer(app);
+const port = process.env.PORT || 3000;
+
+app.use(express.static(publicPath));
 
 // CORS
 app.use(function(req, res, next) {
@@ -32,6 +39,7 @@ var articuloRoutes = require('./routes/articulo');
 var cursosRoutes = require('./routes/curso');
 var inscripcionRoutes = require('./routes/inscripcion');
 var sliderRoutes = require('./routes/slider');
+
 // var busquedaRoutes = require('./routes/busqueda');
 // var uploadRoutes = require('./routes/upload');
 var imagenesRoutes = require('./routes/imagenes')
@@ -66,7 +74,14 @@ app.use('/', appRoutes);
 
 
 // Escuchar petiosiones
-app.listen(3000, () => {
-    console.log('Express Server corriendo en el puerto 3000: \x1b[32m%s\x1b[0m', 'online')
+// app.listen(3000, () => {
+//     console.log('Express Server corriendo en el puerto 3000: \x1b[32m%s\x1b[0m', 'online')
+// });
+// module.exports = app;
+server.listen(port, (err) => {
+
+    if (err) throw new Error(err);
+
+    console.log(`Servidor corriendo en puerto ${ port }`);
+
 });
-module.exports = app;

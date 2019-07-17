@@ -10,7 +10,7 @@ app.use(fileupload());
 // rutas
 app.get('/:tipo', (req, res) => {
     var tipo = req.params.tipo;
-    var desde = req.params.desde || 0;
+    var desde = req.query.desde || 0;
     desde = Number(desde);
 
     if (tipo === 'blog') {
@@ -50,7 +50,7 @@ app.post('/:tipo', (req, res, next) => {
             err: { message: 'Debe de seleccionar una imagen' }
         });
     }
-    console.log(req.files);
+
     var archivo = req.files.imagen;
 
     if (archivo.size > 2000000) {
@@ -75,7 +75,6 @@ app.post('/:tipo', (req, res, next) => {
     }
 
     var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.${ extensionArchivo }`;
-    console.log(nombreArchivo);
     var path = `./uploads/${ tipo }/${ nombreArchivo }`;
 
     archivo.mv(path, err => {
@@ -224,7 +223,7 @@ function actualizarArticulo(id, res, body) {
 
 }
 
-function getArticulos(res, tipo, desde, ) {
+function getArticulos(res, tipo, desde) {
     Articulo.find({ tipo })
         .skip(desde)
         .limit(9)
