@@ -10,14 +10,29 @@ app.use(fileupload());
 // rutas
 app.get('/:tipo', (req, res) => {
     var tipo = req.params.tipo;
-    var desde = req.query.desde || 0;
-    desde = Number(desde);
 
     if (tipo === 'blog') {
-        return getArticulos(res, tipo, desde);
+        return getArticulos(res, tipo);
     }
     if (tipo === 'noticia') {
-        return getArticulos(res, tipo, desde);
+        return getArticulos(res, tipo);
+    } else {
+        return res.status(500).json({
+            ok: false,
+            err: {
+                message: 'Tipo no valido'
+            }
+        });
+    }
+});
+app.get('/ultimo/:tipo', (req, res) => {
+    var tipo = req.params.tipo;
+
+    if (tipo === 'blog') {
+        return getArticulosUltimo(res, tipo);
+    }
+    if (tipo === 'noticia') {
+        return getArticulosUltimo(res, tipo);
     } else {
         return res.status(500).json({
             ok: false,
@@ -52,6 +67,7 @@ app.post('/:tipo', (req, res, next) => {
     }
 
     var archivo = req.files.imagen;
+    console.log(archivo);
 
     if (archivo.size > 2000000) {
         return res.status(400).json({
@@ -223,10 +239,9 @@ function actualizarArticulo(id, res, body) {
 
 }
 
-function getArticulos(res, tipo, desde) {
-    Articulo.find({ tipo })
-        .skip(desde)
-        .limit(9)
+function getArticulos(res, tipo) {
+    Articulo.find({ tipo, activo: true })
+        .sort({$natural:-1})
         .exec((err, articulosDB) => {
             if (err) {
                 return res.status(400).json({
@@ -246,7 +261,7 @@ function getArticulos(res, tipo, desde) {
 }
 
 function getArticulosUltimo(res, tipo) {
-    Articulo.find({ tipo })
+    Articulo.find({ tipo, activo: true })
         .sort({ $natural: -1 })
         .limit(1)
         .exec((err, articulosDB) => {
