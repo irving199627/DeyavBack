@@ -1,9 +1,10 @@
 // Requires
 var express = require('express');
 var mongoose = require('mongoose');
-var bodyParser = require('body-parser')
-    // const path = require('path');
-    // const http = require('http');
+var bodyParser = require('body-parser');
+var cors = require('cors');
+// const path = require('path');
+// const http = require('http');
 
 // Inicializar variables
 var app = express();
@@ -14,14 +15,15 @@ const port = process.env.PORT || 3000;
 // app.use(express.static(publicPath));
 
 // CORS
-app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", req.headers.origin);
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
-    res.header('Access-Control-Allow-Headers', 'Access-Control-Allow-Headers,Content-type,' +
-        'Authorization, Content-Length,X-Requested-With,Access-Control-Request-Headers,token');
-    next();
-});
+app.use(cors());
+// app.use(function(req, res, next) {
+//     res.header("Access-Control-Allow-Origin", "*");
+//     res.header("Access-Control-Allow-Headers", req.headers.origin);
+//     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+//     res.header('Access-Control-Allow-Headers', 'Access-Control-Allow-Headers,Content-type,' +
+//         'Authorization, Content-Length,X-Requested-With,Access-Control-Request-Headers,token');
+//     next();
+// });
 
 
 // Body parser
