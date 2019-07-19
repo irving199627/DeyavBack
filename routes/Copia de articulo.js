@@ -57,20 +57,52 @@ app.get('/:tipo/:id', (req, res) => {
 app.post('/:tipo', (req, res, next) => {
     var tipo = req.params.tipo;
     var body = req.body;
-    var imagen64 = body.img;
-    var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
 
-    var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
-    fs.writeFile(`./uploads/${ tipo }/${nombreArchivo}`, binaryData, 'binary', err => {
+    if (!req.files) {
+        return res.status(400).json({
+            ok: false,
+            mensaje: 'No seleccionó nada',
+            err: { message: 'Debe de seleccionar una imagen' }
+        });
+    }
+
+    var archivo = req.files.imagen;
+    console.log(archivo);
+
+    if (archivo.size > 2000000) {
+        return res.status(400).json({
+            ok: false,
+            mensaje: 'El peso de la imagen es mayor a 2MB',
+            err: { message: 'La imagen debe tener un tamaño menor a 2MB' }
+        });
+    }
+
+    var nombreCortado = archivo.name.split('.');
+    var extensionArchivo = nombreCortado[nombreCortado.length - 1];
+
+    var extensionesValidas = ['png', 'jpg', 'jpeg'];
+
+    if (extensionesValidas.indexOf(extensionArchivo) < 0) {
+        return res.status(400).json({
+            ok: false,
+            mensaje: 'Extension no valida',
+            err: { message: 'Las extensiones validas son ' + extensionesValidas.join(', ') }
+        });
+    }
+
+    var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.${ extensionArchivo }`;
+    var path = `./uploads/${ tipo }/${ nombreArchivo }`;
+
+    archivo.mv(path, err => {
         if (err) {
-            return res.status(400).json({
+            return res.status(500).json({
                 ok: false,
-                err
+                mensaje: 'Error al mover archivo',
+                err: err
             });
         }
-
         if (tipo === 'blog') {
-            return crearArticulo(res, body, tipo, nombreArchivo); //, subirImagen(res, nombreArchivo, binaryData, tipo);
+            return crearArticulo(res, body, tipo, nombreArchivo);
         }
         if (tipo === 'noticia') {
             return crearArticulo(res, body, tipo);
@@ -87,7 +119,8 @@ app.post('/:tipo', (req, res, next) => {
         //     mensaje: 'archivo movido',
         //     extensionArchivo: extensionArchivo
         // });
-    });
+    })
+
 });
 
 
@@ -132,7 +165,6 @@ app.delete('/:tipo/:id', (req, res) => {
 })
 
 // Funciones 
-
 function eliminarArticulo(id, res) {
     Articulo.findById(id, (err, articulo) => {
         if (err) {
@@ -209,7 +241,7 @@ function actualizarArticulo(id, res, body) {
 
 function getArticulos(res, tipo) {
     Articulo.find({ tipo, activo: true })
-        .sort({ $natural: -1 })
+        .sort({$natural:-1})
         .exec((err, articulosDB) => {
             if (err) {
                 return res.status(400).json({
@@ -289,7 +321,6 @@ function crearArticulo(res, body, tipo, nombreArchivo)  {
         img: nombreArchivo,
         tipo: tipo
     });
-
     articulo.save((err, articuloGuardado) => {
         if (err) {
             return res.status(400).json({
@@ -304,21 +335,6 @@ function crearArticulo(res, body, tipo, nombreArchivo)  {
             articulo: articuloGuardado
         });
     });
-}
-
-function subirImagen(res, nombreArchivo, binaryData, tipo) {
-    fs.writeFile(`./uploads/${ tipo }/${nombreArchivo}`, binaryData, 'binary', err => {
-        if (err) {
-            return res.status(400).json({
-                ok: false,
-                err
-            });
-        }
-    });
-    return res.status(200).json({
-        ok: true,
-        message: 'Imagen subida con éxito'
-    })
 }
 
 module.exports = app;

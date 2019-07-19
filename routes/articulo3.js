@@ -57,37 +57,27 @@ app.get('/:tipo/:id', (req, res) => {
 app.post('/:tipo', (req, res, next) => {
     var tipo = req.params.tipo;
     var body = req.body;
-    var imagen64 = body.img;
-    var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
 
-    var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
-    fs.writeFile(`./uploads/${ tipo }/${nombreArchivo}`, binaryData, 'binary', err => {
-        if (err) {
-            return res.status(400).json({
-                ok: false,
-                err
-            });
-        }
 
-        if (tipo === 'blog') {
-            return crearArticulo(res, body, tipo, nombreArchivo); //, subirImagen(res, nombreArchivo, binaryData, tipo);
-        }
-        if (tipo === 'noticia') {
-            return crearArticulo(res, body, tipo);
-        } else {
-            return res.status(500).json({
-                ok: false,
-                err: {
-                    message: 'Tipo no valido'
-                }
-            });
-        }
-        // res.status(200).json({
-        //     ok: true,
-        //     mensaje: 'archivo movido',
-        //     extensionArchivo: extensionArchivo
-        // });
-    });
+    if (tipo === 'blog') {
+        return crearArticulo(res, body, tipo);
+    }
+    if (tipo === 'noticia') {
+        return crearArticulo(res, body, tipo);
+    } else {
+        return res.status(500).json({
+            ok: false,
+            err: {
+                message: 'Tipo no valido'
+            }
+        });
+    }
+    // res.status(200).json({
+    //     ok: true,
+    //     mensaje: 'archivo movido',
+    //     extensionArchivo: extensionArchivo
+    // });
+
 });
 
 
@@ -132,7 +122,6 @@ app.delete('/:tipo/:id', (req, res) => {
 })
 
 // Funciones 
-
 function eliminarArticulo(id, res) {
     Articulo.findById(id, (err, articulo) => {
         if (err) {
@@ -282,14 +271,13 @@ function getArticulosById(res, tipo, id) {
     });
 }
 
-function crearArticulo(res, body, tipo, nombreArchivo)  {
+function crearArticulo(res, body, tipo)  {
     var articulo = new Articulo({
         titulo: body.titulo,
         contenido: body.contenido,
-        img: nombreArchivo,
-        tipo: tipo
+        tipo: tipo,
+        img: body.img
     });
-
     articulo.save((err, articuloGuardado) => {
         if (err) {
             return res.status(400).json({
@@ -304,21 +292,6 @@ function crearArticulo(res, body, tipo, nombreArchivo)  {
             articulo: articuloGuardado
         });
     });
-}
-
-function subirImagen(res, nombreArchivo, binaryData, tipo) {
-    fs.writeFile(`./uploads/${ tipo }/${nombreArchivo}`, binaryData, 'binary', err => {
-        if (err) {
-            return res.status(400).json({
-                ok: false,
-                err
-            });
-        }
-    });
-    return res.status(200).json({
-        ok: true,
-        message: 'Imagen subida con éxito'
-    })
 }
 
 module.exports = app;
