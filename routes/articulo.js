@@ -82,11 +82,6 @@ app.post('/:tipo', (req, res, next) => {
                 }
             });
         }
-        // res.status(200).json({
-        //     ok: true,
-        //     mensaje: 'archivo movido',
-        //     extensionArchivo: extensionArchivo
-        // });
     });
 });
 
@@ -95,9 +90,41 @@ app.put('/:tipo/:id', (req, res) => {
     var id = req.params.id;
     var tipo = req.params.tipo;
     var body = req.body;
-
+    var imagen64 = body.img;
+    if (imagen64 !== undefined) {
+        var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
+        var pathViejo = './uploads/' + tipo + '/' + body.nombreImagen;
+        if (fs.existsSync(pathViejo)) {
+            fs.unlink(pathViejo, (err) => {
+                console.log('borrado');
+            });
+        }
+        var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
+        console.log(nombreArchivo);
+        return fs.writeFile(`./uploads/${ tipo }/${nombreArchivo}`, binaryData, 'binary', err => {
+            if (err) {
+                return res.status(400).json({
+                    ok: false,
+                    err
+                });
+            }
+            if (tipo === 'blog') {
+                return actualizarArticulo(id, res, body, nombreArchivo);
+            }
+            if (tipo === 'noticia') {
+                return actualizarArticulo(id, res, body);
+            } else {
+                return res.status(500).json({
+                    ok: false,
+                    err: {
+                        message: 'Tipo no valido'
+                    }
+                });
+            }
+        });
+    }
     if (tipo === 'blog') {
-        return actualizarArticulo(id, res, body);
+        return actualizarArticulo(id, res, body, '');
     }
     if (tipo === 'noticia') {
         return actualizarArticulo(id, res, body);
@@ -109,6 +136,8 @@ app.put('/:tipo/:id', (req, res) => {
             }
         });
     }
+
+
 });
 
 app.delete('/:tipo/:id', (req, res) => {
@@ -169,7 +198,7 @@ function eliminarArticulo(id, res) {
 
 }
 
-function actualizarArticulo(id, res, body) {
+function actualizarArticulo(id, res, body, nombreArchivo) {
     Articulo.findById(id, (err, articulo) => {
         if (err) {
             return res.status(500).json({
@@ -187,8 +216,11 @@ function actualizarArticulo(id, res, body) {
         }
 
         articulo.titulo = body.titulo;
-        articulo.img = body.img;
         articulo.contenido = body.contenido;
+        articulo.autor = body.autor;
+        if (nombreArchivo !== '') {
+            articulo.img = nombreArchivo;
+        }
 
         articulo.save((err, articuloGuardado) => {
             if (err) {
@@ -267,7 +299,7 @@ function getArticulosById(res, tipo, id) {
             })
         }
         // talvez
-        articuloBD.update({ $inc: { contador: 1 } }, (err) => {
+        articuloBD.updateOne({ $inc: { contador: 1 } }, (err) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
@@ -287,6 +319,7 @@ function crearArticulo(res, body, tipo, nombreArchivo)  {
         titulo: body.titulo,
         contenido: body.contenido,
         img: nombreArchivo,
+        autor: body.autor,
         tipo: tipo
     });
 

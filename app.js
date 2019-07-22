@@ -50,7 +50,7 @@ var imagenesRoutes = require('./routes/imagenes')
 //     if (err) throw err;
 //     console.log('Base de Datos: \x1b[32m%s\x1b[0m', 'online')
 // })
-
+mongoose.set('useCreateIndex', true);
 mongoose.connection.openUri(process.env.MONGODB_URI || 'mongodb://localhost:27017/DeyavDB', { useNewUrlParser: true })
 
 
