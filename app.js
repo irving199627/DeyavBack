@@ -35,7 +35,8 @@ app.use(bodyParser.json({ limit: '10mb', extended: true }));
 var appRoutes = require('./routes/app');
 var usuariosRoutes = require('./routes/usuario');
 var loginRoutes = require('./routes/login');
-var articuloRoutes = require('./routes/articulo');
+// var articuloRoutes = require('./routes/articulo');
+var blogRoutes = require('./routes/blog');
 
 var cursosRoutes = require('./routes/curso');
 var inscripcionRoutes = require('./routes/inscripcion');
@@ -66,7 +67,9 @@ app.use('/api/v1/login', loginRoutes);
 app.use('/api/v1/curso', cursosRoutes);
 app.use('/api/v1/inscripcion', inscripcionRoutes);
 app.use('/api/v1/slider', sliderRoutes);
-app.use('/api/v1/articulo', articuloRoutes);
+// app.use('/api/v1/articulo', articuloRoutes);
+app.use('/api/v1/blog', blogRoutes);
+
 // app.use('/busqueda', busquedaRoutes);
 // app.use('/upload', uploadRoutes);
 app.use('/api/v1/img', imagenesRoutes);

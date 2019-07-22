@@ -100,7 +100,6 @@ app.put('/:tipo/:id', (req, res) => {
             });
         }
         var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
-        console.log(nombreArchivo);
         return fs.writeFile(`./uploads/${ tipo }/${nombreArchivo}`, binaryData, 'binary', err => {
             if (err) {
                 return res.status(400).json({
