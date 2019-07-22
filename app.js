@@ -10,7 +10,7 @@ var cors = require('cors');
 var app = express();
 // const publicPath = path.resolve(__dirname, '/public');
 // let server = http.createServer(app);
-const port = process.env.PORT || 3000;
+const port = 3000;
 
 // app.use(express.static(publicPath));
 
@@ -51,7 +51,7 @@ var imagenesRoutes = require('./routes/imagenes')
 //     console.log('Base de Datos: \x1b[32m%s\x1b[0m', 'online')
 // })
 mongoose.set('useCreateIndex', true);
-mongoose.connection.openUri(process.env.MONGODB_URI || 'mongodb://localhost:27017/DeyavDB', { useNewUrlParser: true })
+mongoose.connection.openUri('mongodb://localhost:27017/DeyavDB', { useNewUrlParser: true })
 
 
 // server index config
@@ -61,17 +61,16 @@ mongoose.connection.openUri(process.env.MONGODB_URI || 'mongodb://localhost:2701
 
 // Rutas
 // app.use('/hospital', hospitalRoutes);
-app.use('/usuario', usuariosRoutes);
-// app.use('/medico', medicoRoutes);
-app.use('/login', loginRoutes);
-app.use('/curso', cursosRoutes);
-app.use('/inscripcion', inscripcionRoutes);
-app.use('/slider', sliderRoutes);
-app.use('/articulo', articuloRoutes);
+app.use('/api/v1/usuario', usuariosRoutes);
+app.use('/api/v1/login', loginRoutes);
+app.use('/api/v1/curso', cursosRoutes);
+app.use('/api/v1/inscripcion', inscripcionRoutes);
+app.use('/api/v1/slider', sliderRoutes);
+app.use('/api/v1/articulo', articuloRoutes);
 // app.use('/busqueda', busquedaRoutes);
 // app.use('/upload', uploadRoutes);
-app.use('/img', imagenesRoutes);
-app.use('/', appRoutes);
+app.use('/api/v1/img', imagenesRoutes);
+app.use('/api/v1', appRoutes);
 
 
 // Escuchar petiosiones
