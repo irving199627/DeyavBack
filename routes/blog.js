@@ -84,8 +84,7 @@ app.get('/:id', (req, res) => {
     });
 });
 
-app.post('/:tipo', (req, res, next) => {
-    var tipo = req.params.tipo;
+app.post('/', (req, res, next) => {
     var body = req.body;
     var imagen64 = body.img;
     var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
@@ -132,50 +131,74 @@ app.put('/:id', (req, res) => {
     var tipo = req.params.tipo;
     var body = req.body;
     var imagen64 = body.img;
-    if (imagen64 !== undefined) {
-        var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
-        var pathViejo = './uploads/' + tipo + '/' + body.nombreImagen;
-        if (fs.existsSync(pathViejo)) {
-            fs.unlink(pathViejo, (err) => {
-                console.log('borrado');
+
+    Articulo.findById(id, (err, articulo) => {
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                mensaje: 'No existe un artículo con ese id',
+                errors: err
             });
         }
-        var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
-        return fs.writeFile(`./uploads/${ tipo }/${nombreArchivo}`, binaryData, 'binary', err => {
+        if (!articulo) {
+            return res.status(400).json({
+                ok: false,
+                mensaje: 'El articulo con el id ' + id + ' no existe',
+                errors: { message: 'No existe un articulo con ese ID' }
+            });
+        }
+
+        articulo.titulo = body.titulo;
+        articulo.contenido = body.contenido;
+        articulo.autor = body.autor;
+        if (imagen64 !== undefined) {
+            var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
+            var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
+            var pathViejo = './uploads/' + tipo + '/' + body.nombreImagen;
+            if (fs.existsSync(pathViejo)) {
+                fs.unlink(pathViejo, (err) => {
+                    console.log('borrado');
+                });
+            }
+            return fs.writeFile(`./uploads/blog/${nombreArchivo}`, binaryData, 'binary', err => {
+                if (err) {
+                    return res.status(400).json({
+                        ok: false,
+                        err
+                    });
+                }
+                articulo.img = nombreArchivo;
+                articulo.save((err, articuloGuardado) => {
+                    if (err) {
+                        return res.status(400).json({
+                            ok: false,
+                            mensaje: 'Error al actualizar articulo',
+                            errors: err
+                        });
+                    }
+                    return res.status(200).json({
+                        ok: true,
+                        articulo: articuloGuardado
+                    });
+                });
+            });
+        }
+
+
+        articulo.save((err, articuloGuardado) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
-                    err
+                    mensaje: 'Error al actualizar articulo',
+                    errors: err
                 });
             }
-            if (tipo === 'blog') {
-                return actualizarArticulo(id, res, body, nombreArchivo);
-            }
-            if (tipo === 'noticia') {
-                return actualizarArticulo(id, res, body);
-            } else {
-                return res.status(500).json({
-                    ok: false,
-                    err: {
-                        message: 'Tipo no valido'
-                    }
-                });
-            }
+            return res.status(200).json({
+                ok: true,
+                articulo: articuloGuardado
+            });
         });
-    }
-    if (tipo === 'blog') {
-        return actualizarArticulo(id, res, body, '');
-    }
-    if (tipo === 'noticia') {
-        return actualizarArticulo(id, res, body);
-    } else {
-        return res.status(500).json({
-            ok: false,
-            err: {
-                message: 'Tipo no valido'
-            }
-        });
-    }
+    });
 
 
 });
