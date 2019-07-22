@@ -4,14 +4,14 @@ var app = express();
 var fileupload = require('express-fileupload');
 var fs = require('fs');
 
-var Articulo = require('../models/articulo');
+var Blog = require('../models/blog');
 app.use(fileupload());
 
 // rutas
 app.get('/', (req, res) => {
-    Articulo.find({ tipo: 'blog', activo: true })
+    Blog.find({ activo: true })
         .sort({ $natural: -1 })
-        .exec((err, articulosDB) => {
+        .exec((err, blogDB) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
@@ -19,10 +19,10 @@ app.get('/', (req, res) => {
                 });
             }
 
-            Articulo.countDocuments({ tipo: 'blog' }, (err, conteo) => {
+            Blog.countDocuments({ tipo: 'blog' }, (err, conteo) => {
                 res.status(200).json({
                     ok: true,
-                    articulos: articulosDB,
+                    blogs: blogDB,
                     total: conteo
                 });
             });
@@ -30,10 +30,10 @@ app.get('/', (req, res) => {
 });
 
 app.get('/ultimo', (req, res) => {
-    Articulo.find({ tipo: 'blog', activo: true })
+    Blog.find({ activo: true })
         .sort({ $natural: -1 })
         .limit(1)
-        .exec((err, articulosDB) => {
+        .exec((err, blogsBD) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
@@ -41,10 +41,10 @@ app.get('/ultimo', (req, res) => {
                 });
             }
 
-            Articulo.countDocuments({ tipo: 'blog' }, (err, conteo) => {
+            Blog.countDocuments({ tipo: 'blog' }, (err, conteo) => {
                 return res.status(200).json({
                     ok: true,
-                    articulos: articulosDB,
+                    blogs: blogsBD,
                     total: conteo
                 });
             });
@@ -53,23 +53,23 @@ app.get('/ultimo', (req, res) => {
 
 app.get('/:id', (req, res) => {
     var id = req.params.id;
-    Articulo.findById(id, (err, articuloBD) => {
+    Blog.findById(id, (err, blogBD) => {
         if (err) {
             res.status(400).json({
                 ok: false,
                 err
             })
         }
-        if (!articuloBD) {
+        if (!blogBD) {
             res.status(404).json({
                 ok: false,
                 err: {
-                    message: 'No existe un articulo con ese id'
+                    message: 'No existe un blog con ese id'
                 }
             })
         }
         // talvez
-        articuloBD.updateOne({ $inc: { contador: 1 } }, (err) => {
+        blogBD.updateOne({ $inc: { contador: 1 } }, (err) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
@@ -78,7 +78,7 @@ app.get('/:id', (req, res) => {
             }
             return res.status(200).json({
                 ok: true,
-                articuloBD
+                blogBD
             });
         })
     });
@@ -87,42 +87,47 @@ app.get('/:id', (req, res) => {
 app.post('/', (req, res, next) => {
     var body = req.body;
     var imagen64 = body.img;
-    var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
 
-    var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
-    fs.writeFile(`./uploads/blog/${nombreArchivo}`, binaryData, 'binary', err => {
-        if (err) {
-            return res.status(400).json({
-                ok: false,
-                err
+    if (imagen64 !== undefined) {
+        var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
+        var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
+        var pathViejo = './uploads/blog/' + body.nombreImagen;
+        if (fs.existsSync(pathViejo)) {
+            fs.unlink(pathViejo, (err) => {
+                console.log('borrado');
             });
         }
-
-        var articulo = new Articulo({
-            titulo: body.titulo,
-            contenido: body.contenido,
-            img: nombreArchivo,
-            autor: body.autor,
-            tipo: 'blog'
-        });
-
-        articulo.save((err, articuloGuardado) => {
+        return fs.writeFile(`./uploads/blog/${nombreArchivo}`, binaryData, 'binary', err => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'Error al crear articulo',
                     err
                 });
             }
 
-            res.status(201).json({
-                ok: true,
-                articulo: articuloGuardado
+            var blog = new Blog({
+                titulo: body.titulo,
+                contenido: body.contenido,
+                autor: body.autor,
+                img: nombreArchivo
+            });
+
+            blog.save((err, blogGuardado) => {
+                if (err) {
+                    return res.status(400).json({
+                        ok: false,
+                        mensaje: 'Error al crear articulo',
+                        err
+                    });
+                }
+
+                res.status(201).json({
+                    ok: true,
+                    blog: blogGuardado
+                });
             });
         });
-
-
-    });
+    }
 });
 
 
@@ -131,25 +136,25 @@ app.put('/:id', (req, res) => {
     var body = req.body;
     var imagen64 = body.img;
 
-    Articulo.findById(id, (err, articulo) => {
+    Blog.findById(id, (err, blog) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'No existe un artículo con ese id',
+                mensaje: 'No existe un blog con ese id',
                 errors: err
             });
         }
-        if (!articulo) {
+        if (!blog) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'El articulo con el id ' + id + ' no existe',
-                errors: { message: 'No existe un articulo con ese ID' }
+                mensaje: 'El blog con el id ' + id + ' no existe',
+                errors: { message: 'No existe un blog con ese ID' }
             });
         }
 
-        articulo.titulo = body.titulo;
-        articulo.contenido = body.contenido;
-        articulo.autor = body.autor;
+        blog.titulo = body.titulo;
+        blog.contenido = body.contenido;
+        blog.autor = body.autor;
         if (imagen64 !== undefined) {
             var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
             var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
@@ -166,8 +171,8 @@ app.put('/:id', (req, res) => {
                         err
                     });
                 }
-                articulo.img = nombreArchivo;
-                articulo.save((err, articuloGuardado) => {
+                blog.img = nombreArchivo;
+                blog.save((err, blogGuardado) => {
                     if (err) {
                         return res.status(400).json({
                             ok: false,
@@ -177,14 +182,14 @@ app.put('/:id', (req, res) => {
                     }
                     return res.status(200).json({
                         ok: true,
-                        articulo: articuloGuardado
+                        blog: blogGuardado
                     });
                 });
             });
         }
 
 
-        articulo.save((err, articuloGuardado) => {
+        blog.save((err, blogGuardado) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
@@ -194,7 +199,7 @@ app.put('/:id', (req, res) => {
             }
             return res.status(200).json({
                 ok: true,
-                articulo: articuloGuardado
+                blog: blogGuardado
             });
         });
     });
@@ -206,7 +211,7 @@ app.put('/:id', (req, res) => {
 
 app.delete('/:id', (req, res) => {
     var id = req.params.id;
-    Articulo.findById(id, (err, articulo) => {
+    Blog.findById(id, (err, blog) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
@@ -214,7 +219,7 @@ app.delete('/:id', (req, res) => {
                 errors: err
             });
         }
-        if (!articulo) {
+        if (!blog) {
             return res.status(400).json({
                 ok: false,
                 mensaje: 'El articulo con el id ' + id + ' no existe',
@@ -222,19 +227,19 @@ app.delete('/:id', (req, res) => {
             });
         }
 
-        articulo.activo = false;
+        blog.activo = false;
 
-        articulo.save((err, articuloGuardado) => {
+        blog.save((err, blogGuardado) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'Error al eliminar articulo',
+                    mensaje: 'Error al eliminar blog',
                     errors: err
                 });
             }
             res.status(200).json({
                 ok: true,
-                articulo: articuloGuardado
+                blog: blogGuardado
             });
         });
     });
