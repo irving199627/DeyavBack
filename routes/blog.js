@@ -90,7 +90,7 @@ app.post('/', (req, res, next) => {
     var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
 
     var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
-    fs.writeFile(`./uploads/${ tipo }/${nombreArchivo}`, binaryData, 'binary', err => {
+    fs.writeFile(`./uploads/blog/${nombreArchivo}`, binaryData, 'binary', err => {
         if (err) {
             return res.status(400).json({
                 ok: false,
@@ -128,7 +128,6 @@ app.post('/', (req, res, next) => {
 
 app.put('/:id', (req, res) => {
     var id = req.params.id;
-    var tipo = req.params.tipo;
     var body = req.body;
     var imagen64 = body.img;
 
@@ -154,7 +153,7 @@ app.put('/:id', (req, res) => {
         if (imagen64 !== undefined) {
             var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
             var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
-            var pathViejo = './uploads/' + tipo + '/' + body.nombreImagen;
+            var pathViejo = './uploads/blog/' + body.nombreImagen;
             if (fs.existsSync(pathViejo)) {
                 fs.unlink(pathViejo, (err) => {
                     console.log('borrado');
