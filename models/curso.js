@@ -1,14 +1,19 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
+var categorias = {
+    values: ['PSICOLOGIA', 'DESARROLLO HUMANO'],
+    mensaje: '{VALUE} no es una categoría permitida'
+}
 var cursoSchema = new Schema({
 
-    nombre: { type: String, required: [true, 'El nombre	es necesario'] },
+    imagen: { type: String, required: false },
+    titulo: { type: String, required: [true, 'El nombre	es necesario'] },
     descripcion: { type: String, required: [true, 'La descripción es necesaria'] },
-    tipo: { type: String, required: [true, 'El tipo es necesario'] },
-    objetivo: { type: String, required: [true, 'El objetivo es necesario'] },
-    temario: { type: String, required: [true, 'El temario es necesario'] },
-    videos: { type: Schema.Types.ObjectId, ref: 'Video' }
+    categoria: { type: String, required: true, enum: categorias },
+    precio: { type: Number, required: [true, 'El precio es necesario'] },
+    activo: { type: Boolean, required: false, default: true }
+
 
 }, { collection: 'cursos' });
 

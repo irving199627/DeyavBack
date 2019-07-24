@@ -5,18 +5,14 @@ var mdautenticacion = require('../middlewares/autenticacion');
 var app = express();
 
 var Curso = require('../models/curso');
-
+var fs = require('fs');
 
 // rutas
 /*  ======================================
         Obtener todos los cursos
     ====================================== */
 app.get('/', (req, res, next) => {
-    var desde = req.query.desde || 0;
-    desde = Number(desde);
-    Curso.find({})
-        .skip(desde)
-        .limit(5)
+    Curso.find({ activo: true })
         .exec((err, cursos) => {
             if (err) {
                 return res.status(500).json({
@@ -26,7 +22,7 @@ app.get('/', (req, res, next) => {
                 });
             }
 
-            Curso.countDocuments({}, (err, conteo) => {
+            Curso.countDocuments({ activo: true }, (err, conteo) => {
                 res.status(200).json({
                     ok: true,
                     cursos: cursos,
@@ -36,12 +32,61 @@ app.get('/', (req, res, next) => {
         });
 });
 
+app.get('/:categoria', (req, res, next) => {
+    var categoria = req.params.categoria;
+    Curso.find({ categoria: categoria, activo: true })
+        .exec((err, cursos) => {
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    mensaje: 'Error cargando cursos',
+                    errors: err
+                });
+            }
+
+            Curso.countDocuments({ categoria, activo: true }, (err, conteo) => {
+                res.status(200).json({
+                    ok: true,
+                    cursos: cursos,
+                    totalConteo: conteo
+                });
+            });
+        });
+});
+
+app.get('/1/:id', (req, res, next) => {
+    var id = req.params.id;
+    Curso.findById(id, (err, curso) => {
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                mensaje: 'Error cargando curso',
+                errors: err
+            });
+        }
+        if (!curso) {
+            return res.status(400).json({
+                ok: false,
+                err: {
+                    mensaje: 'No existe un curso con ese id'
+                }
+            });
+        }
+
+        return res.status(200).json({
+            ok: true,
+            curso: curso
+        });
+    });
+});
+
 /*  ======================================
         ACTUALIZAR un curso
     ====================================== */
 app.put('/:id', (req, res) => {
     var id = req.params.id;
     var body = req.body;
+    var imagen64 = body.img;
 
     Curso.findById(id, (err, curso) => {
         if (err) {
@@ -60,11 +105,42 @@ app.put('/:id', (req, res) => {
             });
         }
 
-        curso.nombre = body.nombre;
+        curso.titulo = body.titulo;
         curso.descripcion = body.descripcion;
         curso.categoria = body.categoria;
-        curso.temario = body.temario;
-        curso.objetivo = body.objetivo;
+        curso.precio = body.precio;
+        if (imagen64 !== undefined) {
+            var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
+            var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
+            var pathViejo = './uploads/cursos/' + body.nombreImagen;
+            if (fs.existsSync(pathViejo)) {
+                fs.unlink(pathViejo, (err) => {
+                    console.log('borrado');
+                });
+            }
+            return fs.writeFile(`./uploads/cursos/${nombreArchivo}`, binaryData, 'binary', err => {
+                if (err) {
+                    return res.status(400).json({
+                        ok: false,
+                        err
+                    });
+                }
+                curso.img = nombreArchivo;
+                curso.save((err, cursoGuardado) => {
+                    if (err) {
+                        return res.status(400).json({
+                            ok: false,
+                            mensaje: 'Error al actualizar curso',
+                            errors: err
+                        });
+                    }
+                    return res.status(200).json({
+                        ok: true,
+                        curso: cursoGuardado
+                    });
+                });
+            });
+        }
 
         curso.save((err, cursoGuardado) => {
             if (err) {
@@ -88,28 +164,42 @@ app.put('/:id', (req, res) => {
     ====================================== */
 app.post('/', (req, res) => {
     var body = req.body;
-    var curso = new Curso({
-        nombre: body.nombre,
-        descripcion: body.descripcion,
-        categoria: body.categoria,
-        temario: body.temario,
-        objetivo: body.objetivo
-    });
+    var imagen64 = body.imagen;
 
-    curso.save((err, cursoGuardado) => {
-        if (err) {
-            return res.status(400).json({
-                ok: false,
-                mensaje: 'Error al crear curso',
-                errors: err
+    if (imagen64 !== undefined) {
+        var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
+        var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
+        return fs.writeFile(`./uploads/cursos/${nombreArchivo}`, binaryData, 'binary', err => {
+            if (err) {
+                return res.status(400).json({
+                    ok: false,
+                    err
+                });
+            }
+            var curso = new Curso({
+                imagen: nombreArchivo,
+                titulo: body.titulo,
+                descripcion: body.descripcion,
+                categoria: body.categoria,
+                precio: body.precio
             });
-        }
 
-        res.status(201).json({
-            ok: true,
-            curso: cursoGuardado
-        });
-    })
+            curso.save((err, cursoGuardado) => {
+                if (err) {
+                    return res.status(400).json({
+                        ok: false,
+                        mensaje: 'Error al crear curso',
+                        errors: err
+                    });
+                }
+
+                res.status(201).json({
+                    ok: true,
+                    curso: cursoGuardado
+                });
+            });
+        })
+    }
 });
 
 /*  ======================================
@@ -117,27 +207,35 @@ app.post('/', (req, res) => {
     ====================================== */
 app.delete('/:id', (req, res) => {
     var id = req.params.id;
-
-    Curso.findByIdAndRemove(id, (err, cursoBorrado) => {
+    Curso.findById(id, (err, curso) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al borrar curso',
+                mensaje: 'No existe un curso con ese id',
                 errors: err
             });
         }
-        if (!cursoBorrado) {
+        if (!curso) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'No existe un curso con ese ID',
+                mensaje: 'El curso con el id ' + id + ' no existe',
                 errors: { message: 'No existe un curso con ese ID' }
             });
         }
-
-        res.status(200).json({
-            ok: true,
-            curso: cursoBorrado
-        });
+        curso.activo = false;
+        curso.save((err, cursoGuardado) => {
+            if (err) {
+                return res.status(400).json({
+                    ok: false,
+                    mensaje: 'Error al eliminar curso',
+                    errors: err
+                });
+            }
+            res.status(200).json({
+                ok: true,
+                curso: cursoGuardado
+            });
+        })
     });
 });
 module.exports = app;

@@ -4,14 +4,14 @@ var app = express();
 var fileupload = require('express-fileupload');
 var fs = require('fs');
 
-var Blog = require('../models/blog');
+var Noticia = require('../models/noticia');
 app.use(fileupload());
 
 // rutas
 app.get('/', (req, res) => {
-    Blog.find({ activo: true })
+    Noticia.find({ activo: true })
         .sort({ $natural: -1 })
-        .exec((err, blogDB) => {
+        .exec((err, noticiaDB) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
@@ -19,10 +19,10 @@ app.get('/', (req, res) => {
                 });
             }
 
-            Blog.countDocuments({}, (err, conteo) => {
+            Noticia.countDocuments({}, (err, conteo) => {
                 res.status(200).json({
                     ok: true,
-                    blogs: blogDB,
+                    noticias: noticiaDB,
                     total: conteo
                 });
             });
@@ -30,10 +30,10 @@ app.get('/', (req, res) => {
 });
 
 app.get('/1/ultimo', (req, res) => {
-    Blog.find({ activo: true })
+    Noticia.find({ activo: true })
         .sort({ $natural: -1 })
         .limit(1)
-        .exec((err, blogsBD) => {
+        .exec((err, noticiaBD) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
@@ -41,35 +41,34 @@ app.get('/1/ultimo', (req, res) => {
                 });
             }
 
-            Blog.countDocuments({}, (err, conteo) => {
-                return res.status(200).json({
-                    ok: true,
-                    blogs: blogsBD,
-                    total: conteo
-                });
+
+            return res.status(200).json({
+                ok: true,
+                noticias: noticiaBD,
             });
+
         });
 });
 
 app.get('/:id', (req, res) => {
     var id = req.params.id;
-    Blog.findById(id, (err, blogBD) => {
+    Noticia.findById(id, (err, noticiaBD) => {
         if (err) {
             res.status(400).json({
                 ok: false,
                 err
             })
         }
-        if (!blogBD) {
+        if (!noticiaBD) {
             res.status(404).json({
                 ok: false,
                 err: {
-                    message: 'No existe un blog con ese id'
+                    message: 'No existe un noticia con ese id'
                 }
             })
         }
         // talvez
-        blogBD.updateOne({ $inc: { contador: 1 } }, (err) => {
+        noticiaBD.updateOne({ $inc: { contador: 1 } }, (err) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
@@ -78,7 +77,7 @@ app.get('/:id', (req, res) => {
             }
             return res.status(200).json({
                 ok: true,
-                blogBD
+                noticiaBD
             });
         })
     });
@@ -91,13 +90,7 @@ app.post('/', (req, res, next) => {
     if (imagen64 !== undefined) {
         var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
         var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
-        var pathViejo = './uploads/blog/' + body.nombreImagen;
-        if (fs.existsSync(pathViejo)) {
-            fs.unlink(pathViejo, (err) => {
-                console.log('borrado');
-            });
-        }
-        return fs.writeFile(`./uploads/blog/${nombreArchivo}`, binaryData, 'binary', err => {
+        return fs.writeFile(`./uploads/noticia/${nombreArchivo}`, binaryData, 'binary', err => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
@@ -105,14 +98,14 @@ app.post('/', (req, res, next) => {
                 });
             }
 
-            var blog = new Blog({
+            var noticia = new Noticia({
                 titulo: body.titulo,
                 contenido: body.contenido,
                 autor: body.autor,
                 img: nombreArchivo
             });
 
-            blog.save((err, blogGuardado) => {
+            noticia.save((err, noticiaGuardada) => {
                 if (err) {
                     return res.status(400).json({
                         ok: false,
@@ -123,7 +116,7 @@ app.post('/', (req, res, next) => {
 
                 res.status(201).json({
                     ok: true,
-                    blog: blogGuardado
+                    noticia: noticiaGuardada
                 });
             });
         });
@@ -136,43 +129,43 @@ app.put('/:id', (req, res) => {
     var body = req.body;
     var imagen64 = body.img;
 
-    Blog.findById(id, (err, blog) => {
+    Noticia.findById(id, (err, noticia) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'No existe un blog con ese id',
+                mensaje: 'No existe una noticia con ese id',
                 errors: err
             });
         }
-        if (!blog) {
+        if (!noticia) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'El blog con el id ' + id + ' no existe',
-                errors: { message: 'No existe un blog con ese ID' }
+                mensaje: 'El noticia con el id ' + id + ' no existe',
+                errors: { message: 'No existe un noticia con ese ID' }
             });
         }
 
-        blog.titulo = body.titulo;
-        blog.contenido = body.contenido;
-        blog.autor = body.autor;
+        noticia.titulo = body.titulo;
+        noticia.contenido = body.contenido;
+        noticia.autor = body.autor;
         if (imagen64 !== undefined) {
             var nombreArchivo = `${ body.titulo }-${ new Date().getMilliseconds() }.jpg`;
             var binaryData = new Buffer.from(imagen64, 'base64').toString('binary');
-            var pathViejo = './uploads/blog/' + body.nombreImagen;
+            var pathViejo = './uploads/noticia/' + body.nombreImagen;
             if (fs.existsSync(pathViejo)) {
                 fs.unlink(pathViejo, (err) => {
                     console.log('borrado');
                 });
             }
-            return fs.writeFile(`./uploads/blog/${nombreArchivo}`, binaryData, 'binary', err => {
+            return fs.writeFile(`./uploads/noticia/${nombreArchivo}`, binaryData, 'binary', err => {
                 if (err) {
                     return res.status(400).json({
                         ok: false,
                         err
                     });
                 }
-                blog.img = nombreArchivo;
-                blog.save((err, blogGuardado) => {
+                noticia.img = nombreArchivo;
+                noticia.save((err, noticiaGuardado) => {
                     if (err) {
                         return res.status(400).json({
                             ok: false,
@@ -182,14 +175,14 @@ app.put('/:id', (req, res) => {
                     }
                     return res.status(200).json({
                         ok: true,
-                        blog: blogGuardado
+                        noticia: noticiaGuardado
                     });
                 });
             });
         }
 
 
-        blog.save((err, blogGuardado) => {
+        noticia.save((err, noticiaGuardado) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
@@ -199,7 +192,7 @@ app.put('/:id', (req, res) => {
             }
             return res.status(200).json({
                 ok: true,
-                blog: blogGuardado
+                noticia: noticiaGuardado
             });
         });
     });
@@ -211,7 +204,7 @@ app.put('/:id', (req, res) => {
 
 app.delete('/:id', (req, res) => {
     var id = req.params.id;
-    Blog.findById(id, (err, blog) => {
+    Noticia.findById(id, (err, noticia) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
@@ -219,7 +212,7 @@ app.delete('/:id', (req, res) => {
                 errors: err
             });
         }
-        if (!blog) {
+        if (!noticia) {
             return res.status(400).json({
                 ok: false,
                 mensaje: 'El articulo con el id ' + id + ' no existe',
@@ -227,19 +220,19 @@ app.delete('/:id', (req, res) => {
             });
         }
 
-        blog.activo = false;
+        noticia.activo = false;
 
-        blog.save((err, blogGuardado) => {
+        noticia.save((err, noticiaGuardado) => {
             if (err) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'Error al eliminar blog',
+                    mensaje: 'Error al eliminar noticia',
                     errors: err
                 });
             }
             res.status(200).json({
                 ok: true,
-                blog: blogGuardado
+                noticia: noticiaGuardado
             });
         });
     });
